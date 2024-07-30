@@ -1,5 +1,5 @@
 <h1>LOGO-WHIZ</h1>
-<h2>The Logo Maker is a simple web application built with React, Tailwind CSS, JavaScript, and Vite, designed for users to customize and download various types of logos. This user-friendly tool allows individuals to select from a library of icons and adjust colors, sizes, and other design elements to create unique logos tailored to their brand. With real-time previews, users can see their changes instantly and download their finished designs in formats like PNG. The responsive design ensures a seamless experience across devices, making it accessible for users of all skill levels.<li><ul>
+<h2>The Logo Maker is a simple online application developed using React, Tailwind CSS, JavaScript, and Vite that allows users to modify and download different sorts of logos. This simple application allows users to choose from a collection of icons and customize colors, sizes, and other design features to create unique logos specific to their company. Real-time previews allow users to see their changes instantaneously and download their completed creations in formats such as PNG. The responsive design provides a consistent experience across devices, making it suitable for users of all ability levels.<li><ul>
   1.React<br>
   2. Tailwind css<br>
   3.Javascript<br>
