@@ -3,35 +3,42 @@ import { UpdateStorageContext } from './context/UpdateStorageContext';
 import { icons } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
-const BASE_URL = 'https://logoexpress.tubeguruji.com';
+const BASE_URL = '/png'; // Use the proxy path for Vite
 
 function LogoPreview({ downloadIcon }) {
     const { updateStorage } = useContext(UpdateStorageContext);
     const [storageValue, setStorageValue] = useState({});
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false); // Track image loading errors
 
     useEffect(() => {
         const storageData = JSON.parse(localStorage.getItem('value'));
         setStorageValue(storageData);
-        console.log("Storage Value:", storageData); // Log the storage value
+        console.log("Storage Value:", storageData);
     }, [updateStorage]);
 
     useEffect(() => {
-        if (downloadIcon) {
+        if (downloadIcon && imageLoaded && !imageError) {
             downloadPngLogo();
         }
-    }, [downloadIcon]);
+    }, [downloadIcon, imageLoaded, imageError]);
 
     const downloadPngLogo = () => {
         const downloadLogoDiv = document.getElementById('downloadLogoDiv');
 
         html2canvas(downloadLogoDiv, {
-            backgroundColor: null
+            backgroundColor: null,
+            useCORS: true,
         }).then(canvas => {
             const pngImage = canvas.toDataURL('image/png');
             const downloadLink = document.createElement('a');
             downloadLink.href = pngImage;
             downloadLink.download = 'SB_Logo_Whiz.png';
+            document.body.appendChild(downloadLink); // Append to body to ensure it works in Firefox
             downloadLink.click();
+            document.body.removeChild(downloadLink); // Clean up after download
+        }).catch(error => {
+            console.error("Error generating canvas:", error);
         });
     };
 
@@ -54,9 +61,17 @@ function LogoPreview({ downloadIcon }) {
         return <LucideIcon color={color} size={size} style={{ transform: `rotate(${rotate}deg)` }} />;
     };
 
+    const handleImageLoad = () => {
+        console.log("Image loaded successfully.");
+        setImageLoaded(true);
+        setImageError(false); // Reset error state
+    };
+
     const handleImageError = (e) => {
         console.error("Image failed to load:", e.target.src); // Log the failed image path
-        e.target.src = `${BASE_URL}/png/default.png`; // Fallback image
+        setImageLoaded(false); // Prevent download if the image fails to load
+        setImageError(true); // Set error state
+        e.target.src = `${BASE_URL}/default.png`; // Fallback image
     };
 
     return (
@@ -69,7 +84,8 @@ function LogoPreview({ downloadIcon }) {
                     style={getBackgroundStyle()}
                 >
                     {storageValue?.icon?.includes('.png') ? (
-                        <img src={`${BASE_URL}/png/${storageValue?.icon}`} // Use the full URL
+                        <img
+                            src={`${BASE_URL}/${storageValue?.icon}`} // Use the proxy path
                             style={{
                                 height: storageValue?.iconSize,
                                 width: storageValue?.iconSize,
@@ -77,13 +93,16 @@ function LogoPreview({ downloadIcon }) {
                                 transition: 'transform 0.3s ease',
                             }}
                             alt={storageValue?.icon}
+                            onLoad={handleImageLoad}
                             onError={handleImageError} // Handle error if the image fails to load
                         />
                     ) : (
-                        <Icon name={storageValue?.icon}
+                        <Icon
+                            name={storageValue?.icon}
                             color={storageValue?.iconColor}
                             size={storageValue?.iconSize}
-                            rotate={storageValue?.iconRotate} />
+                            rotate={storageValue?.iconRotate}
+                        />
                     )}
                 </div>
             </div>
