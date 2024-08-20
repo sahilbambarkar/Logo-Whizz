@@ -27,19 +27,21 @@ function LogoPreview({ downloadIcon }) {
 
         html2canvas(downloadLogoDiv, {
             backgroundColor: null,
+            useCORS: true, // Enable CORS for external images
         }).then(canvas => {
             const pngImage = canvas.toDataURL('image/png');
             const downloadLink = document.createElement('a');
             downloadLink.href = pngImage;
             downloadLink.download = 'SB_Logo_Whiz.png';
             downloadLink.click();
+        }).catch(error => {
+            console.error("Error generating PNG:", error);
         });
     };
 
     const getBackgroundStyle = () => {
         if (!storageValue?.bgColor) return {};
 
-        // Check if the value is a gradient
         const isGradient = storageValue.bgColor.startsWith('linear-gradient') || storageValue.bgColor.startsWith('radial-gradient');
 
         return {
