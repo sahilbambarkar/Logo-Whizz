@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { SmilePlus } from 'lucide-react';
 import { icons } from 'lucide-react';
 import axios from 'axios';
 import {
@@ -11,34 +10,43 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { iconList } from '@/constants/icon';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Base_URL ='https://logoexpress.tubeguruji.com'
+const BASE_URL = 'https://logoexpress.tubeguruji.com';
 
 function IconList({ selectedIcon }) {
     const [openDialog, setOpenDialog] = useState(false);
-    const [pngIconList,setPngIconList]=useState([]);
-    const storageValue = JSON.parse(localStorage.getItem('value'));
-    const [icon, setIcon] = useState(storageValue ? storageValue?.icon : 'SmilePlus');
+    const [pngIconList, setPngIconList] = useState([]);
+    const [icon, setIcon] = useState(() => {
+        const storageValue = JSON.parse(localStorage.getItem('value'));
+        return storageValue ? storageValue.icon : 'SmilePlus';
+    });
+    const [loading, setLoading] = useState(true);
 
-    useEffect(()=>{
-         getPngIcons();
-    },[])
+    useEffect(() => {
+        getPngIcons();
+    }, []);
 
-    const Icon = ({ name, color, size }) => {
-        const LucideIcon = icons[name];
-        if (!LucideIcon) {
-            return null; // Return null if the icon doesn't exist
+    const getPngIcons = async () => {
+        try {
+            const response = await axios.get(`${BASE_URL}/getIcons.php`);
+            setPngIconList(response.data);
+        } catch (error) {
+            console.error("Error fetching PNG icons:", error);
+        } finally {
+            setLoading(false);
         }
-        return <LucideIcon color={color} size={size} />;
     };
 
-    const getPngIcons=()=>{
-        axios.get(Base_URL+'/getIcons.php').then(resp=>{
-            console.log(resp.data);
-            setPngIconList(resp.data);
-        })
-    }
+    const loadIcon = (name) => {
+        try {
+            const LucideIcon = icons[name];
+            return LucideIcon ? <LucideIcon color={'#000'} size={20} /> : <div>no icons</div>;
+        } catch (error) {
+            console.error(`Error loading icon ${name}:`, error);
+            return <div>Error loading icon</div>;
+        }
+    };
 
     return (
         <div>
@@ -48,11 +56,11 @@ function IconList({ selectedIcon }) {
                     onClick={() => setOpenDialog(true)}
                     className='p-3 cursor-pointer bg-gray-200 rounded-md w-[50px] h-[50px] flex items-center justify-center my-2'
                 >
-                    {icon?.includes('.png')?
-                    <img src={Base_URL+'/png/'+icon}/>:
-                    
-                    <Icon name={icon} color={'#000'} size={20} />
-                    }
+                    {icon.includes('.png') ? (
+                        <img src={`${BASE_URL}/png/${icon}`} alt={icon} />
+                    ) : (
+                        loadIcon(icon)
+                    )}
                 </div>
             </div>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -67,30 +75,39 @@ function IconList({ selectedIcon }) {
                                 </TabsList>
                                 <TabsContent value="icon">
                                     <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-auto h-[400px] p-6'>
-                                        {iconList.map((icon, index) => (
-                                            <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
-                                                onClick={() => {
-                                                    selectedIcon(icon); setOpenDialog(false)
-                                                    setIcon(icon)
-                                                }}>
-                                                <Icon name={icon} color={'#000'} size={20} />
-                                            </div>
-                                        ))}
+                                        {loading ? (
+                                            <div>Loading icons...</div>
+                                        ) : (
+                                            iconList.map((icon, index) => (
+                                                <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
+                                                    onClick={() => {
+                                                        selectedIcon(icon);
+                                                        setOpenDialog(false);
+                                                        setIcon(icon);
+                                                    }}>
+                                                    {loadIcon(icon)}
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </TabsContent>
                                 <TabsContent value="color-icon">
                                     <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-auto h-[400px] p-6'>
-                                        {pngIconList.map((icon, index) => (
-                                            <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
-                                                onClick={() => {
-                                                    selectedIcon(icon); setOpenDialog(false)
-                                                    setIcon(icon)
-                                                }}>
-                                                <img src={Base_URL+"/png/"+icon} />
-                                            </div>
-                                        ))}
+                                        {loading ? (
+                                            <div>Loading PNG icons...</div>
+                                        ) : (
+                                            pngIconList.map((icon, index) => (
+                                                <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
+                                                    onClick={() => {
+                                                        selectedIcon(icon);
+                                                        setOpenDialog(false);
+                                                        setIcon(icon);
+                                                    }}>
+                                                    <img src={`${BASE_URL}/png/${icon}`} alt={icon} />
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
-                                
                                 </TabsContent>
                             </Tabs>
                         </DialogDescription>
