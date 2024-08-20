@@ -28,6 +28,8 @@ function LogoPreview({ downloadIcon }) {
         html2canvas(downloadLogoDiv, {
             backgroundColor: null,
             useCORS: true, // Enable CORS for external images
+            logging: true, // Enable logging for debugging
+            allowTaint: true, // Allow tainted images
         })
         .then(canvas => {
             const pngImage = canvas.toDataURL('image/png');
@@ -92,6 +94,7 @@ function LogoPreview({ downloadIcon }) {
                                 width: storageValue?.iconSize,
                                 transform: `rotate(${storageValue?.iconRotate}deg)`,
                                 transition: 'transform 0.3s ease',
+                                objectFit: 'contain', // Ensure the image fits well
                             }}
                         />
                     ) : (
