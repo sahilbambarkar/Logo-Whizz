@@ -8,6 +8,7 @@ const Base_URL = 'https://logoexpress.tubeguruji.com'; // Update with your base 
 function LogoPreview({ downloadIcon }) {
   const { updateStorage } = useContext(UpdateStorageContext);
   const [storageValue, setStorageValue] = useState({});
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   useEffect(() => {
     const storageData = JSON.parse(localStorage.getItem('value'));
@@ -16,17 +17,18 @@ function LogoPreview({ downloadIcon }) {
   }, [updateStorage]);
 
   useEffect(() => {
-    if (downloadIcon) {
+    if (downloadIcon && isImageLoaded) {
       downloadPngLogo();
     }
-  }, [downloadIcon]);
+  }, [downloadIcon, isImageLoaded]);
 
   // Function to download the logo as a PNG file
   const downloadPngLogo = () => {
     const downloadLogoDiv = document.getElementById('downloadLogoDiv');
 
     html2canvas(downloadLogoDiv, {
-      backgroundColor: null
+      backgroundColor: null,
+      useCORS: true, // Enable CORS
     }).then(canvas => {
       const pngImage = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
@@ -77,13 +79,13 @@ function LogoPreview({ downloadIcon }) {
             <img
               src={iconPath}
               alt="Logo"
+              onLoad={() => setIsImageLoaded(true)}
               style={{
                 height: storageValue?.iconSize,
                 width: storageValue?.iconSize,
                 transform: `rotate(${storageValue?.iconRotate}deg)`,
                 transition: 'transform 0.3s ease',
               }}
-              onLoad={downloadIcon ? downloadPngLogo : null}
             />
           ) : (
             <Icon
