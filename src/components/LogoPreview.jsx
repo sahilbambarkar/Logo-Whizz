@@ -1,95 +1,121 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { UpdateStorageContext } from './context/UpdateStorageContext';
+import React, { useEffect, useState } from 'react';
 import { icons } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import axios from 'axios';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { iconList } from '@/constants/icon';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Base_URL = 'https://logoexpress.tubeguruji.com'
+const BASE_URL = 'https://logoexpress.tubeguruji.com';
 
-function LogoPreview({downloadIcon}) {
-    const { updateStorage } = useContext(UpdateStorageContext);
-    const [storageValue, setStorageValue] = useState({});
+function IconList({ selectedIcon }) {
+    const [openDialog, setOpenDialog] = useState(false);
+    const [pngIconList, setPngIconList] = useState([]);
+    const [icon, setIcon] = useState(() => {
+        const storageValue = JSON.parse(localStorage.getItem('value'));
+        return storageValue ? storageValue.icon : 'SmilePlus';
+    });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storageData = JSON.parse(localStorage.getItem('value'));
-        setStorageValue(storageData);
-        console.log(storageData);
-    }, [updateStorage]);
+        getPngIcons();
+    }, []);
 
-    useEffect(()=>{
-      if (downloadIcon)
-        {
-          downloadPngLogo();
-      }
-    },[downloadIcon])
-
-    // used for downloading the logo in png format
-    const downloadPngLogo=()=>{
-        const downloadLogoDiv=document.getElementById('downloadLogoDiv');
-
-        html2canvas(downloadLogoDiv,{
-            backgroundColor:null
-        }).then(canvas=>{
-            const pngImage=canvas.toDataURL('image/png');
-            const downloadLink=document.createElement('a');
-            downloadLink.href=pngImage;
-            downloadLink.download='SB_Logo_Whiz.png';
-            downloadLink.click();
-        })
-    }
-
-    const getBackgroundStyle = () => {
-        if (!storageValue?.bgColor) return {};
-
-        // Check if the value is a gradient
-        const isGradient = storageValue.bgColor.startsWith('linear-gradient') || storageValue.bgColor.startsWith('radial-gradient');
-
-        return {
-            borderRadius: storageValue?.bgRounded,
-            background: isGradient ? storageValue.bgColor : storageValue.bgColor,
-        };
-    };
-     const Icon=({name,color,size,rotate})=>{
-        const LucideIcon=icons[name];
-        if (!LucideIcon){
-            return;
+    const getPngIcons = async () => {
+        try {
+            const response = await axios.get(`${BASE_URL}/getIcons.php`);
+            setPngIconList(response.data);
+        } catch (error) {
+            console.error("Error fetching PNG icons:", error);
+        } finally {
+            setLoading(false);
         }
-        return <LucideIcon color={color} size={size}
-            style={{
-                transform:`rotate(${rotate}deg)`
-            }}
-        />
-     }
-    return (
-        <div className='flex items-center justify-center h-screen w-full'>
-            <div className='h-[500px] w-[500px] bg-gray-200 outline-dotted outline-gray-300'
-            style={{
-                padding:storageValue?.bgPadding
-            }}>
-                <div
-                    id='downloadLogoDiv'
-                    className='h-full w-full flex items-center justify-center'
-                    style={getBackgroundStyle()}
-                >
+    };
 
-                  {storageValue?.icon?.includes('.png')?
-                  <img src={"/png/"+storageValue?.icon}
-                    style={{
-                        height: storageValue?.iconSize,
-                        width: storageValue?.iconSize,
-                        transform: `rotate(${storageValue?.iconRotate}deg)`, // Rotate the PNG image
-                        transition: 'transform 0.3s ease',
-                    }}
-                  />:
-                  
-                    <Icon name={storageValue?.icon} 
-                    color={storageValue?.iconColor} 
-                    size={storageValue?.iconSize}
-                    rotate={storageValue?.iconRotate} />
-                  }
+    const loadIcon = (name) => {
+        try {
+            const LucideIcon = icons[name];
+            return LucideIcon ? <LucideIcon color={'#000'} size={20} /> : <div>no icons</div>;
+        } catch (error) {
+            console.error(`Error loading icon ${name}:`, error);
+            return <div>Error loading icon</div>;
+        }
+    };
+
+    return (
+        <div>
+            <div>
+                <label>Icon</label>
+                <div
+                    onClick={() => setOpenDialog(true)}
+                    className='p-3 cursor-pointer bg-gray-200 rounded-md w-[50px] h-[50px] flex items-center justify-center my-2'
+                >
+                    {icon.includes('.png') ? (
+                        <img src={`${BASE_URL}/png/${icon}`} alt={icon} />
+                    ) : (
+                        loadIcon(icon)
+                    )}
                 </div>
             </div>
+            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogContent className="bg-white">
+                    <DialogHeader>
+                        <DialogTitle>Pick your Favorite Icon</DialogTitle>
+                        <DialogDescription>
+                            <Tabs defaultValue="icon" className="w-[400px]">
+                                <TabsList className="border-b border-gray-200">
+                                    <TabsTrigger value="icon" className="px-4 py-2 text-white">Icons</TabsTrigger>
+                                    <TabsTrigger value="color-icon" className="px-4 py-2 text-white">Color Icons</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="icon">
+                                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-auto h-[400px] p-6'>
+                                        {loading ? (
+                                            <div>Loading icons...</div>
+                                        ) : (
+                                            iconList.map((icon, index) => (
+                                                <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
+                                                    onClick={() => {
+                                                        selectedIcon(icon);
+                                                        setOpenDialog(false);
+                                                        setIcon(icon);
+                                                    }}>
+                                                    {loadIcon(icon)}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="color-icon">
+                                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-auto h-[400px] p-6'>
+                                        {loading ? (
+                                            <div>Loading PNG icons...</div>
+                                        ) : (
+                                            pngIconList.map((icon, index) => (
+                                                <div key={index} className='flex items-center justify-center cursor-pointer border p-3 rounded-sm'
+                                                    onClick={() => {
+                                                        selectedIcon(icon);
+                                                        setOpenDialog(false);
+                                                        setIcon(icon);
+                                                    }}>
+                                                    <img src={`${BASE_URL}/png/${icon}`} alt={icon} />
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </DialogDescription>
+                    </DialogHeader>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
-export default LogoPreview;
+export default IconList;
